@@ -2,6 +2,8 @@
 
 Real-time speech-to-speech translation between any two languages, powered by Gemini Live API. Translating on the fly.
 
+> **Built for the [Gemini Live Agent Challenge](https://geminiliveagentchallenge.devpost.com/)** — real-time speech-to-speech translation using Gemini 2.5 Flash Native Audio. Category: "The Live Agent."
+
 **Use case:** Two people who don't share a language — travellers, expats, military families stationed abroad — open the app, pick their languages, and just talk. No typing, no buttons, no turn-taking.
 
 **Blog:** [We Built a Real-Time Voice Translator Because We Lived the Problem](https://medium.com/@shashwataditya7/we-built-a-real-time-voice-translator-because-we-lived-the-problem-4dcca7a55866)
@@ -109,9 +111,92 @@ gcloud run deploy flytranslate \
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full system design.
-See [docs/PROTOCOL.md](docs/PROTOCOL.md) for the WebSocket protocol specification.
-See [docs/DECISIONS.md](docs/DECISIONS.md) for architectural decision records.
+```mermaid
+graph TB
+    A["User A (Browser/Phone)<br/>Speaks Hindi"] -->|"WebSocket<br/>PCM audio + JSON"| CR["Cloud Run (FastAPI)"]
+    B["User B (Browser/Phone)<br/>Speaks Japanese"] -->|"WebSocket<br/>PCM audio + JSON"| CR
+
+    subgraph CR["Cloud Run (FastAPI)"]
+        subgraph Room["Room 'ABC123'"]
+            SA["Gemini Session A<br/>Hindi → Japanese"]
+            SB["Gemini Session B<br/>Japanese → Hindi"]
+        end
+        API["GET /api/languages"]
+    end
+
+    SA -->|"Translated audio"| B
+    SB -->|"Translated audio"| A
+    SA <-->|"Live API"| G["Gemini 2.5 Flash<br/>Native Audio"]
+    SB <-->|"Live API"| G
+```
+
+### Audio flow (one utterance)
+
+```mermaid
+sequenceDiagram
+    participant A as User A (Hindi)
+    participant S as FlyTranslate Server
+    participant G as Gemini Live API
+    participant B as User B (Japanese)
+
+    A->>S: PCM audio chunks (16kHz mono, via WebSocket)
+    S->>G: Forward to Session A (Hindi→Japanese)
+    G-->>G: VAD detects end-of-speech
+    G->>S: Translated audio stream (24kHz mono)
+    S->>B: Forward PCM to User B's WebSocket
+    B-->>B: Plays Japanese audio
+
+    Note over A,B: Reverse direction (Japanese→Hindi) works identically via Session B
+```
+
+<details>
+<summary><strong>API Reference</strong></summary>
+
+#### `GET /api/languages`
+
+Returns all 70+ supported languages.
+
+```json
+[
+  { "code": "en", "name": "English", "native_name": "English", "flag": "🇺🇸", "bcp47": "en-US", "recommended": true },
+  { "code": "ja", "name": "Japanese", "native_name": "日本語", "flag": "🇯🇵", "bcp47": "ja-JP", "recommended": true },
+  { "code": "hi", "name": "Hindi", "native_name": "हिन्दी", "flag": "🇮🇳", "bcp47": "hi-IN", "recommended": false }
+]
+```
+
+#### `WS /ws`
+
+Single WebSocket endpoint. Carries both binary audio frames and JSON signaling.
+
+**Client → Server**
+
+| Message | Fields | Description |
+|---------|--------|-------------|
+| `create_room` | `language` | Create a room, speak this language |
+| `join_room` | `room`, `language` | Join existing room by code |
+| `leave` | — | End the call |
+| *(binary frame)* | — | PCM audio: 16kHz, 16-bit, mono, 3200-byte chunks (100ms) |
+
+**Server → Client**
+
+| Message | Fields | Description |
+|---------|--------|-------------|
+| `room_created` | `room` | Room code to share |
+| `room_joined` | `room`, `participants` | Both users connected |
+| `call_started` | — | Gemini sessions ready, start sending audio |
+| `transcript` | `direction`, `text` | `input` = what peer said, `output` = translation |
+| `turn_complete` | — | One utterance fully translated |
+| `peer_disconnected` | — | Other user left |
+| `error` | `message` | Error description |
+
+**Audio formats**
+
+| Direction | Sample rate | Encoding | Channels | Chunk size |
+|-----------|-------------|----------|----------|------------|
+| Client → Server | 16kHz | PCM 16-bit LE | Mono | 3200 bytes (100ms) |
+| Server → Client | 24kHz | PCM 16-bit LE | Mono | Variable |
+
+</details>
 
 ## Built for
 
