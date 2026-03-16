@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0A1128">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/svg+xml" href="/static/logo.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <title>FlyTranslate</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, sans-serif;
+            background: #030816;
+            color: #e4e4e7;
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Safe area padding for notched phones */
+        .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+        .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+        /* Screen management */
+        .screen { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
+        .screen.active { display: flex; }
+
+        /* ====== HOME SCREEN ====== */
+        .home-screen {
+            background: #030816;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .home-logo {
+            width: 88px;
+            height: 88px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #BFDFFF 0%, #3AD9D1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .home-logo svg { width: 48px; height: 48px; fill: #030816; }
+        .home-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .home-subtitle {
+            font-size: 14px;
+            color: #a1a1aa;
+            margin-bottom: 48px;
+        }
+        .home-actions { width: 100%; max-width: 340px; }
+        .btn-primary {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #BFDFFF;
+            color: #030816;
+            margin-bottom: 12px;
+            transition: background 0.15s;
+            -webkit-appearance: none;
+        }
+        .btn-primary:active { background: #A0CFFF; }
+        .home-divider {
+            text-align: center;
+            color: #a1a1aa;
+            font-size: 13px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .home-divider::before, .home-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.15);
+        }
+        .join-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .join-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 16px;
+            background: #0A1128;
+            color: #e4e4e7;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-align: center;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .join-input::placeholder { letter-spacing: normal; color: #a1a1aa; font-size: 14px; }
+        .join-input:focus { border-color: #BFDFFF; }
+        .btn-join {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 100px;
+            background: #BFDFFF;
+            color: #030816;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .btn-join:active { background: #A0CFFF; }
+
+        /* ====== LANGUAGE SELECT SCREEN ====== */
+        .lang-screen {
+            background: #030816;
+            padding: 0 24px 24px;
+        }
+        .lang-header {
+            display: flex;
+            align-items: center;
+            padding: 16px 0;
+            gap: 16px;
+        }
+        .lang-header .back-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .lang-header .back-btn:active { background: rgba(255,255,255,0.1); }
+        .lang-header .back-btn svg { width: 24px; height: 24px; fill: #e4e4e7; }
+        .lang-header-title { font-size: 20px; font-weight: 600; }
+        .lang-section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #BFDFFF;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 24px 0 12px;
+        }
+        .lang-search {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 12px;
+            background: #0A1128;
+            color: #e4e4e7;
+            font-size: 15px;
+            outline: none;
+            margin-bottom: 8px;
+            -webkit-appearance: none;
+        }
+        .lang-search::placeholder { color: #a1a1aa; }
+        .lang-search:focus { border-color: #BFDFFF; }
+        .lang-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .lang-card {
+            background: #0A1128;
+            border-radius: 12px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.15s, background 0.15s;
+        }
+        .lang-card:active { background: rgba(255,255,255,0.08); }
+        .lang-card.selected { border-color: #BFDFFF; background: rgba(191,223,255,0.1); }
+        .lang-card.recommended::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #7EC100;
+            flex-shrink: 0;
+        }
+        .lang-flag { font-size: 24px; line-height: 1; flex-shrink: 0; }
+        .lang-info { flex: 1; min-width: 0; }
+        .lang-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lang-native { font-size: 11px; color: #a1a1aa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lang-start-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 100px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: #BFDFFF;
+            color: #030816;
+            margin-top: 24px;
+            opacity: 0.4;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            -webkit-appearance: none;
+        }
+        .lang-start-btn.ready { opacity: 1; pointer-events: auto; }
+        .lang-start-btn.ready:active { background: #A0CFFF; }
+
+        /* ====== WAITING SCREEN ====== */
+        .waiting-screen {
+            background: #030816;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .waiting-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #0A1128;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+        .waiting-icon svg { width: 36px; height: 36px; fill: #BFDFFF; }
+        .waiting-label {
+            font-size: 14px;
+            color: #a1a1aa;
+            margin-bottom: 8px;
+        }
+        .waiting-code {
+            font-size: 44px;
+            font-weight: 700;
+            letter-spacing: 8px;
+            color: #BFDFFF;
+            margin-bottom: 24px;
+            font-variant-numeric: tabular-nums;
+        }
+        .waiting-text {
+            font-size: 14px;
+            color: #a1a1aa;
+            text-align: center;
+        }
+        .waiting-dots::after {
+            content: '';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+        }
+        .waiting-cancel {
+            margin-top: 32px;
+            padding: 12px 32px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 100px;
+            background: none;
+            color: #e4e4e7;
+            font-size: 15px;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .waiting-cancel:active { background: rgba(255,255,255,0.05); }
+
+        /* ====== CALL SCREEN ====== */
+        .call-screen {
+            background: linear-gradient(180deg, #0A1128 0%, #060E20 50%, #030816 100%);
+            align-items: center;
+            justify-content: space-between;
+            padding: 0;
+        }
+        .call-top {
+            padding-top: calc(env(safe-area-inset-top, 20px) + 20px);
+            text-align: center;
+            width: 100%;
+        }
+        .call-encrypted {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 4px;
+        }
+        .call-encrypted svg { width: 10px; height: 10px; fill: rgba(255,255,255,0.5); }
+        .call-label {
+            font-size: 13px;
+            color: rgba(255,255,255,0.6);
+        }
+        .call-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        .call-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+        .call-avatar svg { width: 60px; height: 60px; fill: rgba(255,255,255,0.6); }
+        .call-name {
+            font-size: 22px;
+            font-weight: 600;
+            color: white;
+        }
+        .call-timer {
+            font-size: 15px;
+            color: rgba(255,255,255,0.7);
+            font-variant-numeric: tabular-nums;
+        }
+        .call-langs {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .call-lang-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.12);
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+        }
+        .call-lang-arrow { color: rgba(255,255,255,0.4); font-size: 14px; }
+        .call-bottom {
+            width: 100%;
+            padding: 0 40px calc(env(safe-area-inset-bottom, 20px) + 40px);
+        }
+        .call-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            width: 100%;
+        }
+        .call-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .call-action-circle {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        .call-action-circle svg { width: 24px; height: 24px; fill: white; }
+        .call-action-circle.active { background: white; }
+        .call-action-circle.active svg { fill: #0A1128; }
+        .call-action-label {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }
+        .call-end-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .call-end-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #D10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+        .call-end-circle:active { transform: scale(0.92); }
+        .call-end-circle svg { width: 28px; height: 28px; fill: white; }
+        .call-end-label { font-size: 11px; color: rgba(255,255,255,0.7); }
+
+        /* ====== ENDED SCREEN ====== */
+        .ended-screen {
+            background: #030816;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .ended-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #0A1128;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .ended-icon svg { width: 36px; height: 36px; fill: #D10000; }
+        .ended-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .ended-duration {
+            font-size: 14px;
+            color: #a1a1aa;
+            margin-bottom: 32px;
+        }
+        .btn-new-call {
+            padding: 14px 48px;
+            border: none;
+            border-radius: 100px;
+            background: #BFDFFF;
+            color: #030816;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        .btn-new-call:active { background: #A0CFFF; }
+
+        /* ====== ERROR TOAST ====== */
+        .toast {
+            position: fixed;
+            top: calc(env(safe-area-inset-top, 8px) + 8px);
+            left: 16px;
+            right: 16px;
+            padding: 14px 18px;
+            background: #D10000;
+            color: white;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 100;
+            transform: translateY(-120%);
+            transition: transform 0.25s ease;
+            text-align: center;
+        }
+        .toast.show { transform: translateY(0); }
+
+        /* Ripple animation for connecting state */
+        .connecting-ripple {
+            position: absolute;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px solid rgba(191,223,255,0.3);
+            animation: ripple 2s ease-out infinite;
+        }
+        .connecting-ripple:nth-child(2) { animation-delay: 0.6s; }
+        .connecting-ripple:nth-child(3) { animation-delay: 1.2s; }
+        @keyframes ripple {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- ERROR TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <!-- HOME SCREEN -->
+    <div id="homeScreen" class="screen home-screen active">
+        <div class="home-logo">
+            <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        </div>
+        <h1 class="home-title">FlyTranslate</h1>
+        <p class="home-subtitle">Real-time voice translation</p>
+        <div class="home-actions">
+            <button class="btn-primary" onclick="goToLanguageSelect('create')">Start a Call</button>
+            <div class="home-divider">or join an existing call</div>
+            <div class="join-row">
+                <input type="text" id="roomCodeInput" class="join-input" placeholder="Room code" maxlength="6" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+                <button class="btn-join" onclick="goToLanguageSelect('join')">Join</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LANGUAGE SELECT SCREEN -->
+    <div id="langScreen" class="screen lang-screen">
+        <div class="lang-header safe-top">
+            <button class="back-btn" onclick="goHome()">
+                <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+            </button>
+            <span class="lang-header-title" id="langScreenTitle">I speak...</span>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding-bottom:24px;">
+            <input type="text" class="lang-search" id="langSearch" placeholder="Search languages..." oninput="filterLanguages()">
+            <div class="lang-grid" id="langGrid"></div>
+        </div>
+
+        <button id="startCallBtn" class="lang-start-btn" onclick="confirmLanguage()">Continue</button>
+    </div>
+
+    <!-- WAITING SCREEN -->
+    <div id="waitingScreen" class="screen waiting-screen">
+        <div class="waiting-icon">
+            <svg viewBox="0 0 24 24"><path d="M16 1H8C6.34 1 5 2.34 5 4v16c0 1.66 1.34 3 3 3h8c1.66 0 3-1.34 3-3V4c0-1.66-1.34-3-3-3zm1 17H7V4h10v14zm-3 3h-4v-1h4v1z"/></svg>
+        </div>
+        <p class="waiting-label">Share this code with your partner</p>
+        <div id="roomCodeDisplay" class="waiting-code"></div>
+        <p class="waiting-text">Waiting for them to join<span class="waiting-dots"></span></p>
+        <button class="waiting-cancel" onclick="cancelWaiting()">Cancel</button>
+    </div>
+
+    <!-- CALL SCREEN -->
+    <div id="callScreen" class="screen call-screen">
+        <div class="call-top">
+            <div class="call-encrypted">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/></svg>
+                End-to-end translated
+            </div>
+            <div class="call-label">FlyTranslate Call</div>
+        </div>
+        <div class="call-center">
+            <div style="position:relative; display:flex; align-items:center; justify-content:center;">
+                <div class="call-avatar">
+                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                </div>
+            </div>
+            <div class="call-name" id="callPartnerName">Partner</div>
+            <div class="call-timer" id="callTimer">00:00</div>
+            <div class="call-langs">
+                <span class="call-lang-badge" id="callMyLang"></span>
+                <span class="call-lang-arrow">&rarr;</span>
+                <span class="call-lang-badge" id="callTheirLang"></span>
+            </div>
+        </div>
+        <div class="call-bottom">
+            <div class="call-actions">
+                <button class="call-action-btn" onclick="toggleSpeaker()" id="speakerBtn">
+                    <div class="call-action-circle" id="speakerCircle">
+                        <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    </div>
+                    <span class="call-action-label">Speaker</span>
+                </button>
+                <button class="call-end-btn" onclick="endCall()">
+                    <div class="call-end-circle">
+                        <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 01-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28a11.27 11.27 0 00-2.67-1.85.996.996 0 01-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+                    </div>
+                    <span class="call-end-label">End</span>
+                </button>
+                <button class="call-action-btn" onclick="toggleMute()" id="muteBtn">
+                    <div class="call-action-circle" id="muteCircle">
+                        <svg id="muteIcon" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.993 6.993 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z"/></svg>
+                    </div>
+                    <span class="call-action-label" id="muteLabel">Mute</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ENDED SCREEN -->
+    <div id="endedScreen" class="screen ended-screen">
+        <div class="ended-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08a.956.956 0 01-.29-.7c0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28a11.27 11.27 0 00-2.67-1.85.996.996 0 01-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z"/></svg>
+        </div>
+        <div class="ended-title">Call Ended</div>
+        <div class="ended-duration" id="endedDuration">Duration: 00:00</div>
+        <button class="btn-new-call" onclick="newCall()">New Call</button>
+    </div>
+
+    <script>
+        // ====== STATE ======
+        let ws, micContext, playbackContext, micWorklet, micStream;
+        let currentLanguage = null;
+        let peerLanguage = null;
+        let isMuted = false;
+        let isSpeaker = false;
+        let callStartTime = null;
+        let callTimerInterval = null;
+        let nextStartTime = 0;
+        let scheduledSources = [];
+        let callActive = false;
+        let allLanguages = [];
+        let flowMode = null; // 'create' or 'join'
+
+        // ====== LOAD LANGUAGES ======
+        async function loadLanguages() {
+            try {
+                const resp = await fetch('/api/languages');
+                allLanguages = await resp.json();
+            } catch (e) {
+                // Fallback: minimal set
+                allLanguages = [
+                    { code: 'en', name: 'English', native_name: 'English', flag: '\u{1F1FA}\u{1F1F8}', recommended: true },
+                    { code: 'ja', name: 'Japanese', native_name: '\u65E5\u672C\u8A9E', flag: '\u{1F1EF}\u{1F1F5}', recommended: true },
+                ];
+            }
+        }
+        loadLanguages();
+
+        // ====== SCREEN NAVIGATION ======
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        function goHome() { showScreen('homeScreen'); }
+
+        function goToLanguageSelect(mode) {
+            if (mode === 'join') {
+                const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+                if (!code || code.length !== 6) {
+                    showToast('Enter a 6-character room code');
+                    return;
+                }
+            }
+            flowMode = mode;
+            currentLanguage = null;
+            document.getElementById('langScreenTitle').textContent = 'I speak...';
+            document.getElementById('startCallBtn').classList.remove('ready');
+            document.getElementById('langSearch').value = '';
+            renderLanguageGrid();
+            showScreen('langScreen');
+        }
+
+        // ====== LANGUAGE GRID ======
+        function renderLanguageGrid(filter = '') {
+            const grid = document.getElementById('langGrid');
+            const lowerFilter = filter.toLowerCase();
+            const filtered = allLanguages.filter(l =>
+                !filter || l.name.toLowerCase().includes(lowerFilter) || l.native_name.toLowerCase().includes(lowerFilter) || l.code.toLowerCase().includes(lowerFilter)
+            );
+
+            // Sort: recommended first, then alphabetical
+            filtered.sort((a, b) => {
+                if (a.recommended !== b.recommended) return a.recommended ? -1 : 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            grid.innerHTML = filtered.map(l => {
+                const selected = currentLanguage === l.code ? ' selected' : '';
+                const rec = l.recommended ? ' recommended' : '';
+                return `<div class="lang-card${selected}${rec}" onclick="selectLanguage('${l.code}')" data-lang="${l.code}">
+                    <span class="lang-flag">${l.flag}</span>
+                    <div class="lang-info">
+                        <div class="lang-name">${l.name}</div>
+                        <div class="lang-native">${l.native_name}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function filterLanguages() {
+            const query = document.getElementById('langSearch').value;
+            renderLanguageGrid(query);
+        }
+
+        function selectLanguage(code) {
+            currentLanguage = code;
+            document.querySelectorAll('#langGrid .lang-card').forEach(c => {
+                c.classList.toggle('selected', c.dataset.lang === code);
+            });
+            document.getElementById('startCallBtn').classList.add('ready');
+        }
+
+        // ====== CONFIRM LANGUAGE & START ======
+        async function confirmLanguage() {
+            if (!currentLanguage) return;
+            if (flowMode === 'create') {
+                await startCall();
+            } else {
+                await joinRoom();
+            }
+        }
+
+        // ====== ROOM CREATION ======
+        async function checkMicPermission() {
+            try {
+                if (navigator.permissions) {
+                    const result = await navigator.permissions.query({ name: 'microphone' });
+                    if (result.state === 'denied') {
+                        showToast('Microphone access is required');
+                        return false;
+                    }
+                    return true;
+                }
+                return true;
+            } catch (e) {
+                return true;
+            }
+        }
+
+        function connectWebSocket() {
+            return new Promise((resolve, reject) => {
+                const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                ws = new WebSocket(`${protocol}//${location.host}/ws`);
+                ws.binaryType = 'arraybuffer';
+                ws.onopen = () => resolve();
+                ws.onerror = () => reject(new Error('Connection failed'));
+                ws.onmessage = (event) => {
+                    if (event.data instanceof ArrayBuffer) {
+                        playAudioChunk(event.data);
+                    } else {
+                        handleSignaling(JSON.parse(event.data));
+                    }
+                };
+                ws.onclose = () => {
+                    console.log('WebSocket closed');
+                    if (document.getElementById('callScreen').classList.contains('active')) {
+                        exitCall();
+                    } else if (document.getElementById('waitingScreen').classList.contains('active')) {
+                        showToast('Connection lost');
+                        stopAudio();
+                        goHome();
+                    }
+                };
+            });
+        }
+
+        async function startCall() {
+            if (!currentLanguage) return;
+            if (!await checkMicPermission()) return;
+            if (!playbackContext) {
+                playbackContext = new AudioContext({ sampleRate: 24000 });
+            }
+            try {
+                await connectWebSocket();
+                ws.send(JSON.stringify({ type: 'create_room', language: currentLanguage }));
+            } catch (e) {
+                showToast('Could not connect to server');
+            }
+        }
+
+        async function joinRoom() {
+            const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+            if (!code || code.length !== 6) {
+                showToast('Enter a 6-character room code');
+                return;
+            }
+            if (!currentLanguage) return;
+            if (!await checkMicPermission()) return;
+            if (!playbackContext) {
+                playbackContext = new AudioContext({ sampleRate: 24000 });
+            }
+            try {
+                document.getElementById('roomCodeDisplay').textContent = code;
+                document.querySelector('#waitingScreen .waiting-label').textContent = 'Joining call';
+                document.querySelector('#waitingScreen .waiting-text').innerHTML = 'Connecting<span class="waiting-dots"></span>';
+                showScreen('waitingScreen');
+
+                await connectWebSocket();
+                ws.send(JSON.stringify({ type: 'join_room', room: code, language: currentLanguage }));
+            } catch (e) {
+                showToast('Could not connect to server');
+                goHome();
+            }
+        }
+
+        function cancelWaiting() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'leave' }));
+                ws.close();
+            }
+            ws = null;
+            goHome();
+        }
+
+        // ====== SIGNALING ======
+        function handleSignaling(msg) {
+            switch (msg.type) {
+                case 'room_created':
+                    document.getElementById('roomCodeDisplay').textContent = msg.room;
+                    document.querySelector('#waitingScreen .waiting-label').textContent = 'Share this code with your partner';
+                    document.querySelector('#waitingScreen .waiting-text').innerHTML = 'Waiting for them to join<span class="waiting-dots"></span>';
+                    showScreen('waitingScreen');
+                    break;
+                case 'room_joined':
+                    if (msg.language) currentLanguage = msg.language;
+                    if (msg.peer_language) peerLanguage = msg.peer_language;
+                    break;
+                case 'call_started':
+                    enterCallScreen();
+                    startAudioCapture();
+                    startAudioPlayback();
+                    break;
+                case 'transcript':
+                    break;
+                case 'turn_complete':
+                    break;
+                case 'peer_disconnected':
+                    exitCall();
+                    break;
+                case 'error':
+                    showToast(msg.message);
+                    break;
+            }
+        }
+
+        // ====== LANGUAGE HELPERS ======
+        function getLangDisplay(code) {
+            const lang = allLanguages.find(l => l.code === code);
+            if (!lang) return { flag: '', name: code.toUpperCase(), code: code.toUpperCase() };
+            return { flag: lang.flag, name: lang.name, code: code.toUpperCase() };
+        }
+
+        // ====== CALL SCREEN ======
+        function enterCallScreen() {
+            callActive = true;
+            const myLang = getLangDisplay(currentLanguage);
+            const theirLang = getLangDisplay(peerLanguage);
+
+            document.getElementById('callMyLang').innerHTML = `${myLang.flag} ${myLang.code}`;
+            document.getElementById('callTheirLang').innerHTML = `${theirLang.flag} ${theirLang.code}`;
+            document.getElementById('callPartnerName').textContent = `${theirLang.name} Speaker`;
+
+            showScreen('callScreen');
+            startCallTimer();
+        }
+
+        function startCallTimer() {
+            callStartTime = Date.now();
+            const timerEl = document.getElementById('callTimer');
+            callTimerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+                const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+                const secs = String(elapsed % 60).padStart(2, '0');
+                timerEl.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopCallTimer() {
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+        }
+
+        function getCallDuration() {
+            if (!callStartTime) return '00:00';
+            const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+            const mins = String(Math.floor(elapsed / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // ====== AUDIO ======
+        function playAudioChunk(arrayBuffer) {
+            if (!playbackContext) return;
+            if (playbackContext.state === 'suspended') playbackContext.resume();
+
+            const pcmData = new Int16Array(arrayBuffer);
+            const float32 = new Float32Array(pcmData.length);
+            for (let i = 0; i < pcmData.length; i++) {
+                float32[i] = pcmData[i] / 32768.0;
+            }
+
+            const buffer = playbackContext.createBuffer(1, float32.length, 24000);
+            buffer.getChannelData(0).set(float32);
+
+            const source = playbackContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(playbackContext.destination);
+
+            const now = playbackContext.currentTime;
+            nextStartTime = Math.max(now, nextStartTime);
+            source.start(nextStartTime);
+            nextStartTime += buffer.duration;
+
+            scheduledSources.push(source);
+            source.onended = () => {
+                const idx = scheduledSources.indexOf(source);
+                if (idx > -1) scheduledSources.splice(idx, 1);
+            };
+        }
+
+        async function startAudioCapture() {
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1 } });
+                micContext = new AudioContext({ sampleRate: 16000 });
+                const actualRate = micContext.sampleRate;
+                await micContext.audioWorklet.addModule('/static/audio-processor.js');
+                const source = micContext.createMediaStreamSource(micStream);
+                micWorklet = new AudioWorkletNode(micContext, 'mic-processor');
+                micWorklet.port.onmessage = (e) => {
+                    if (!isMuted && ws && ws.readyState === WebSocket.OPEN && e.data.type === 'audio') {
+                        if (actualRate === 16000) {
+                            ws.send(e.data.data);
+                        } else {
+                            const input = new Int16Array(e.data.data);
+                            const ratio = actualRate / 16000;
+                            const outputLen = Math.round(input.length / ratio);
+                            const output = new Int16Array(outputLen);
+                            for (let i = 0; i < outputLen; i++) {
+                                output[i] = input[Math.round(i * ratio)];
+                            }
+                            ws.send(output.buffer);
+                        }
+                    }
+                };
+                source.connect(micWorklet);
+            } catch (e) {
+                console.error('Mic capture error:', e);
+                showToast('Microphone access is required. Please allow and try again.');
+            }
+        }
+
+        async function startAudioPlayback() {
+            if (!playbackContext) {
+                playbackContext = new AudioContext({ sampleRate: 24000 });
+            }
+            if (playbackContext.state === 'suspended') {
+                await playbackContext.resume();
+            }
+            nextStartTime = 0;
+            scheduledSources = [];
+        }
+
+        function stopAudio() {
+            if (micStream) {
+                micStream.getTracks().forEach(t => t.stop());
+                micStream = null;
+            }
+            if (micContext) { micContext.close(); micContext = null; }
+            scheduledSources.forEach(s => { try { s.stop(); } catch(e) {} });
+            scheduledSources = [];
+            if (playbackContext) { playbackContext.close(); playbackContext = null; }
+            micWorklet = null;
+        }
+
+        // ====== CALL CONTROLS ======
+        function toggleMute() {
+            isMuted = !isMuted;
+            const circle = document.getElementById('muteCircle');
+            const label = document.getElementById('muteLabel');
+            circle.classList.toggle('active', isMuted);
+            label.textContent = isMuted ? 'Unmute' : 'Mute';
+            if (isMuted) {
+                document.getElementById('muteIcon').innerHTML = '<path d="M19 11h-1.7c0 .74-.16 1.43-.43 2.05l1.23 1.23c.56-.98.9-2.09.9-3.28zm-4.02.17c0-.06.02-.11.02-.17V5c0-1.66-1.34-3-3-3S9 3.34 9 5v.18l5.98 5.99zM4.27 3L3 4.27l6.01 6.01V11c0 1.66 1.33 3 2.99 3 .22 0 .44-.03.65-.08l1.66 1.66c-.71.33-1.5.52-2.31.52-2.76 0-5.3-2.1-5.3-5.1H5c0 3.41 2.72 6.23 6 6.72V20h2v-2.28c.88-.12 1.71-.39 2.48-.77L19.73 21 21 19.73 4.27 3z"/>';
+            } else {
+                document.getElementById('muteIcon').innerHTML = '<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.993 6.993 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z"/>';
+            }
+            if (micStream) {
+                micStream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+            }
+        }
+
+        function toggleSpeaker() {
+            isSpeaker = !isSpeaker;
+            document.getElementById('speakerCircle').classList.toggle('active', isSpeaker);
+        }
+
+        function endCall() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'leave' }));
+            }
+            exitCall();
+        }
+
+        function exitCall() {
+            if (!callActive) return;
+            callActive = false;
+            const duration = getCallDuration();
+            stopCallTimer();
+            stopAudio();
+            document.getElementById('endedDuration').textContent = `Duration: ${duration}`;
+            showScreen('endedScreen');
+        }
+
+        function newCall() {
+            if (ws) { ws.close(); ws = null; }
+            stopAudio();
+            stopCallTimer();
+            isMuted = false;
+            isSpeaker = false;
+            callStartTime = null;
+            peerLanguage = null;
+            document.getElementById('muteCircle').classList.remove('active');
+            document.getElementById('muteLabel').textContent = 'Mute';
+            document.getElementById('speakerCircle').classList.remove('active');
+            document.getElementById('muteIcon').innerHTML = '<path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15a.998.998 0 00-.98-.85c-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08a6.993 6.993 0 005.91-5.78c.1-.6-.39-1.14-1-1.14z"/>';
+            document.getElementById('roomCodeInput').value = '';
+            goHome();
+        }
+
+        // ====== PWA SERVICE WORKER ======
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+        }
+    </script>
+</body>
+</html>
